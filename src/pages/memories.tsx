@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { auth, db } from "../../lib/firebaseConfig";
 import { collection, getDocs, addDoc } from "firebase/firestore";
+import imageCompression from "browser-image-compression";
 
 export default function Memories() {
     const router = useRouter();
@@ -47,23 +48,37 @@ export default function Memories() {
     const [message, setMessage] = useState<string | null>(null);
 
     const handleUpload = async () => {
-        console.log(message);
         if (!selectedFile) return;
 
+        // 👉 Convert compressed image to Base64
+
         try {
-            // Convert image to Base64
+            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 800, useWebWorker: true };
+            const compressedFile = await imageCompression(selectedFile, options);
+
             const reader = new FileReader();
-            reader.readAsDataURL(selectedFile);
+            reader.readAsDataURL(compressedFile);
+
             reader.onload = async () => {
-                const base64Image = reader.result as string; // Get Base64 string
+                const base64Image = reader.result as string;
 
-                // Store Base64 image in Firestore
-                await addDoc(collection(db, "memories"), { image: base64Image, timestamp: new Date(), message: message });
+                try {
+                    await addDoc(collection(db, "memories"), {
+                        image: base64Image,
+                        timestamp: new Date(),
+                        message: message || "", // Ensure message is always defined
+                    });
 
-                // Update UI with the new image
-                setPhotos([...photos, base64Image]);
-                setOpenModal(false);
-                setSelectedFile(null);
+                    setPhotos((prevPhotos) => [...prevPhotos, base64Image]);
+                    setOpenModal(false);
+                    setSelectedFile(null);
+                } catch (error) {
+                    console.error("Error adding document:", error);
+                }
+            };
+
+            reader.onerror = (error) => {
+                console.error("Error reading file:", error);
             };
         } catch (error) {
             console.error("Error uploading image:", error);

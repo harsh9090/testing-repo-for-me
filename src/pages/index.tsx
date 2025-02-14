@@ -8,13 +8,30 @@ export default function LoginPage() {
   const [memory, setMemory] = useState<string>("");
   const [error, setError] = useState<string>("");
   const router = useRouter();
+  const isCloseGuess = (input: string) => {
+    const formattedInput = input.trim().toLowerCase();
 
+    return (
+      formattedInput.includes("22 july") ||
+      formattedInput.includes("22 jul") ||
+      formattedInput.includes("jul 22") ||
+      formattedInput.includes("july 22") ||
+      formattedInput.includes("07-22-2017") ||
+      formattedInput.includes("22-07-2017") ||
+      formattedInput.includes("22/07/2017") ||
+      formattedInput.includes("22.07.2017") ||
+      formattedInput.includes("2017-07-22") ||
+      formattedInput.includes("2017/07/22")
+    );
+  };
   const handleLogin = async () => {
     const email = "testing@gmail.com"; // Her email
-    const password = memory; // Memory as password
-
+    if (!isCloseGuess(memory)) {
+      setError("Oops! Wrong memory. Try again ❤️");
+      return;
+    }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, "testing");
       router.push("/dashboard"); // Redirect to vault
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -50,7 +67,7 @@ export default function LoginPage() {
         >
           <FavoriteIcon color="error" sx={{ fontSize: 50 }} />
           <Typography variant="h5" gutterBottom>
-            Unlock Our Love Vault 💖
+            Unlock Love Vault with the special date💖
           </Typography>
           <TextField
             fullWidth
